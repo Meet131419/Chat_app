@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OTP Verification</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Poppins", sans-serif;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin: 50px auto;
+            width: 100%;
+            max-width: 600px;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+        .header a {
+            font-size: 1.8em;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .header a:hover {
+            text-decoration: underline;
+        }
+        .otp {
+            background: linear-gradient(90deg, #007bff, #00bfff);
+            padding: 15px 30px;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 1.6em;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            width: fit-content;
+        }
+        .footer {
+            color: #777;
+            font-size: 0.9em;
+            line-height: 1.4;
+            margin-top: 20px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        p {
+            margin: 15px 0;
+            font-size: 1em;
+            line-height: 1.6;
+            text-align: left;
+        }
+        strong {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="#">Reset Password</a>
+        </div>
+        
+        <strong style="font-size: large; font-weight: 400;">Dear {{first_name}},</strong>
+        <p>
+            We have received a Reset password request for your Django Chat account. For security purposes, please verify your identity by providing the following One-Time Password (OTP).
+        </p>
+        <div class="otp">{{otp}}</div>
+        <p><strong>Hurry Up! This OTP will expire after 60 seconds.</strong></p>
+        <p>
+            If you did not initiate this login request, please disregard this message. Please ensure the confidentiality of your OTP and do not share it with anyone.
+        </p>
+        <p><strong>Thank you for using Django Shop</strong></p>
+        
+        <div class="footer">
+            <p>This email can't receive replies.</p>
+            <p>&copy; 2025 Django Chat. All rights reserved. <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+        </div>
+    </div>
+</body>
+</html>

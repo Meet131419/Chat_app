@@ -1,0 +1,465 @@
+{% extends "_cbase.html" %}
+
+{% block content %}
+
+<div class="flex flex-col w-full" style="min-height: 85vh;">
+    <!-- Main Chat Container -->
+    <div class="max-w-screen-xl mx-auto w-full flex flex-1 border border-gray-300 rounded-2xl shadow-lg overflow-hidden mt-2 mb-8">
+        
+        <!-- Left Sidebar (Profile Section) -->
+        <div class="w-64 bg-gray-100 border-r border-gray-300 p-2 overflow-y-auto h-[90vh]">
+            <div class="flex items-center mb-4">
+                <img class="w-8 h-8 rounded-full" src="/static/images/user.png" alt="User">
+                
+                <div class="ml-4">
+                    <a href="{% url 'chat_view' %}">
+                        <span class="block text-lg font-semibold text-gray-900 dark:text-white ml-2">{{ user.First_name }}</span>
+                        {% comment %} <span class="block text-sm text-gray-500 truncate dark:text-gray-400 ml-2">{{ user.email }}</span> {% endcomment %}
+                    </a>
+                </div>
+                
+            </div>
+            <hr class="my-4 border-gray-300">
+            <div class="space-y-4">
+                <p class="text-gray-600 dark:text-gray-400">Recent Chats</p>
+                <ul class="space-y-2">
+                    {% for group in chat_groups %}
+            <hr class="my-1 border-gray-300">
+
+                    <li class="flex items-center space-x-2 mt-2 hover:bg-blue-100 hover:scale-105 cursor-pointer transition-transform duration-200 ease-in-out">
+                        {% if group.avatar %}
+                        <img class="w-8 h-8 rounded-full hover:border-2 hover:border-green-500" src="{{ group.avatar.url }}" alt="Group Avatar">
+                        {% else %}
+                        <img class="w-8 h-8 rounded-full" src="/static/images/user.png" alt="Default Avatar">
+                        {% endif %}
+                        <div>
+                            <a href="{% url 'chat_view' group.group_name %}">
+                                <span class="block text-sm font-semibold text-gray-800 dark:text-white hover:text-green-500">
+                                    #{{ group.group_name }}
+                                </span>
+                                <span class="block text-xs text-gray-500 dark:text-gray-400">
+                                    {% if group.chat_messages.first %}
+                                    {{ group.chat_messages.first.body }}
+                                    {% else %}
+                                    No messages yet
+                                    {% endif %}
+                                </span>
+                            </a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Chat Area -->
+        <div class="w-full bg-white flex flex-col h-[110vh]">
+            
+            <!-- Chat Messages -->
+            <div id="chat-messages-container" class="flex-1 p-6 overflow-y-auto space-y-4 px-2 py-2" hx-ext="ws" ws-connect="ws://{{ request.get_host }}/ws/chat/{{ group_name }}/" style="max-height: 70vh; overflow-y: auto; scroll-behavior: smooth;">
+                {% if group_name %}
+                    {% for message in chat_messages reversed %}
+                        {% if message.author == user %}
+                            <!-- Message sent by the current user -->
+                            <div class="flex flex-row-reverse space-x-reverse space-x-4 justify-end animate-fade-up fade-in">
+                                <div class="bg-blue-600 text-black rounded-lg px-4 py-2 max-w-xs shadow-md">
+                                    <span class="text-[3px] text-gray-500 block">@You</span>
+                                    {% if message.file %}
+                                        <!-- Display file attachment -->
+                                        {% if message.is_image %}
+                                            <img src="{{ message.file_url }}" alt="Attachment" class="w-44 h-34 rounded-lg">
+                                            <a href="{{ message.file_url }}"download  class="text-blue-500  flex items-center">
+                                                <i class='bx bx-download'></i></i>  Download 
+                                            </a>
+                                        {% elif message.is_video %}
+                                            <video controls class="w-64 h-auto rounded-lg">
+                                                <source src="{{ message.file_url }}" type="{{ message.file_type }}">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        {% elif message.is_pdf%}
+                                            
+                                        <i class='bx bxs-file-pdf text-red-600 text-2xl'></i>
+                                        <span class="text-md font-medium text-gray-800 truncate max-w-[150px]">
+                                            {{ message.file_name | default:"Document.pdf" }}
+                                        </span><br>
+                                        <a href="{{ message.file_url }}"download  class="text-blue-500 flex items-center">
+                                            <i class='bx bx-download'></i></i> Download 
+                                        </a>
+                                        {% elif message.is_audio%}
+                                            <i class='bx bxs-music text-green-600 text-2xl'></i>
+                                            <span class="text-md font-medium text-gray-800 truncate max-w-[150px]">{{message.file_name | default:"Audio File.mp3"}}</span>
+                                            <audio controls class="w-84 mt-2">
+                                                <source src="{{message.file_url}}" type="{{message.file_type}}">
+                                                Your browser does not support the audio element.
+                                            </audio>
+
+                                        {% else %}
+                                            <a href="{{ message.file_url }}"download target="_blank" class="text-blue-500  flex items-center">
+                                                <i class='bx bx-file bx-sm mr-2'></i> Download File
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <!-- Display text message -->
+                                        <strong class='text-large'>{{ message.body }}</strong>
+                                    {% endif %}
+                                    <span class="text-xs text-gray-500 block">{{ message.formatted_time }}</span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Message sent by other users -->
+                            <div class="flex space-x-4 justify-start animate-fade-up fade-in">
+                                <div class="bg-gray-200 text-gray-800 rounded-lg px-4 py-2 max-w-xs shadow-md">
+                                    <span class="text-[3px] text-gray-500 block leading-tight">@{{ message.author_name }}</span>
+                                    {% if message.file %}
+                                        <!-- Display file attachment -->
+                                        {% if message.is_image %}
+                                            <img src="{{ message.file_url }}" alt="Attachment" class="w-44 h-34 rounded-lg">
+                                            <a href="{{ message.file_url }}"download  class="text-blue-500 flex items-center">
+                                                <i class='bx bx-download'></i></i> Download 
+                                            </a>
+                                        {% elif message.is_video %}
+                                            <video controls class="w-64 h-auto rounded-lg">
+                                                <source src="{{ message.file_url }}" type="{{ message.file_type }}">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        {% elif message.is_pdf%}
+                                            
+                                        <i class='bx bxs-file-pdf text-red-600 text-2xl'></i>
+                                        <span class="text-md font-medium text-gray-800 truncate max-w-[150px]">
+                                            {{ message.file_name | default:"Document.pdf" }}
+                                        </span><br>
+                                        <a href="{{ message.file_url }}"download  class="text-blue-500 flex items-center">
+                                            <i class='bx bx-download'></i></i> Download 
+                                        </a>
+                                        {% elif message.is_audio%}
+                                            <i class='bx bxs-music text-green-600 text-2xl'></i>
+                                            <span class="text-md font-medium text-gray-800 truncate max-w-[150px]">{{message.file_name | default:"Audio File.mp3"}}</span>
+                                            <audio controls class="w-84 mt-2">
+                                                <source src="{{message.file_url}}" type="{{message.file_type}}">
+                                                Your browser does not support the audio element.
+                                            </audio>
+                                            
+                                        {% else %}
+                                            <a href="{{ message.file_url }}" target="_blank" class="text-blue-500  flex items-center">
+                                                <i class='bx bx-file bx-sm mr-2'></i> Download File
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <!-- Display text message -->
+                                        <strong class='text-large'>{{ message.body }}</strong>
+                                    {% endif %}
+                                    <span class="text-xs text-gray-500 block text-right">{{ message.formatted_time }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Default view when no group is selected -->
+                    <div class="flex justify-center items-center text-gray-500">
+                        <p>Select a group from the left to view the chat.</p>
+                    </div>
+                    <section class="bg-white dark:bg-gray-900">
+                        <div class="py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 mt-16">
+                            <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
+                                Let's Have a Conversation
+                            </h1>
+                            <p class="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 lg:px-48 dark:text-gray-400">
+                                Your World of Conversations, Just a Click Away.
+                            </p>
+                        </div>
+                    </section>
+                {% endif %}
+            </div>
+            
+            {% if group_name %}
+            <!-- Message Input Area -->
+            <!-- Message Input Area -->
+<div class="p-4 border-t border-gray-300 bg-white sticky bottom-0">
+    <form id="chat-form" method="post" class="flex items-center space-x-2" hx-ext="ws" ws-send enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" id="username" value="{{ user.username }}">
+        <input type="hidden" id="user-email" value="{{ user.email }}">
+        <input type="text" id="chat-message-input" name="body" placeholder="Add message..." class="w-full flex-grow px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" autocomplete="off">
+        <input type="file" id="file-input" name="file" accept="image/*,application/pdf,video/*" style="display: none;">
+        <button type="button" id="attachment-button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+            <i class='bx bx-paperclip bx-xs'></i>
+        </button>
+        <span id="file-name" class="text-sm text-gray-500"></span>
+        <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+            <i class='bx bx-send bx-xs'></i>
+        </button>
+    </form>
+</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+<script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", async function () {
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+        
+        const chatForm = document.getElementById("chat-form");
+        const chatMessagesContainer = document.getElementById("chat-messages-container");
+        const chatInput = document.getElementById("chat-message-input");
+        const email = document.getElementById("user-email")?.value;
+        const fileInput = document.getElementById("file-input");
+        const attachmentButton = document.getElementById("attachment-button");
+        const fileNameDisplay = document.getElementById("file-name");
+    
+        // Initialize Pusher
+        const pusher = new Pusher("54e51ab819a31c195541", {
+            cluster: "ap2",
+            encrypted: true
+        });
+    
+        const channel = pusher.subscribe("chat_{{ group_name }}");
+    
+        channel.bind("new_message", function (data) {
+            console.log("📢 New message event received from Pusher:", data); 
+            showNotification(data.sender, data.message);
+        });
+    
+
+        const userChannel = pusher.subscribe("chat-group-{{ group_name }}");
+
+        userChannel.bind("user-joined", function (data) {
+            console.log("🚀 User Joined Event:", data);
+            showToast(data.message); // Show toast when user joins
+        });
+
+        function showNotification(sender, message) {    
+            console.log("🔔 Attempting to show notification:", sender, message);
+            if (Notification.permission === "granted") {
+                new Notification(`New message from ${sender}`, {
+                    body: message,
+                    icon: "/static/images/user.png"
+                });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    
+                });
+            }
+        }
+    
+        // Initialize WebSocket
+        const ws = new WebSocket(`ws://${window.location.host}/ws/chat/{{ group_name }}/`);
+    
+        ws.onopen = function () {
+            console.log("✅ WebSocket Connected!");
+        };
+    
+        ws.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            console.log("📩 Message Received:", data);
+    
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("flex", "space-x-4", data.email === email ? "justify-end" : "justify-start");
+            
+            if (data.file_url) {
+        // Display file attachment
+        if (data.file_type.startsWith("image")) {
+            messageElement.innerHTML = `
+                <div class="bg-${data.email === email ? "blue-500 text-black" : "gray-200 text-gray-800"} rounded-lg px-4 py-2 max-w-xs shadow-md">
+                    <span class="text-[3px] text-gray-500 block leading-tight">@${data.author_name}</span>
+                    <img src="${data.file_url}" alt="Attachment" class="w-44 h-34 rounded-lg">
+                    <a href="${data.file_url}"download class="text-blue-500 flex items-center">
+                        <i class='bx bx-download'></i> Download 
+                    </a>
+                    <span class="text-xs text-gray-500 block">${data.message_time}</span>
+                </div>
+            `;
+        } else if (data.file_type.startsWith("video")) {
+            messageElement.innerHTML = `
+                <div class="bg-${data.email === email ? "blue-500 text-black" : "gray-200 text-gray-800"} rounded-lg px-4 py-2 max-w-xs shadow-md">
+                    <span class="text-[3px] text-gray-500 block leading-tight">@${data.author_name}</span>
+                    <video controls class="w-64 h-auto rounded-lg">
+                        <source src="${data.file_url}" type="${data.file_type}">
+                        Your browser does not support the video tag.
+                    </video>
+                    <span class="text-xs text-gray-500 block">${data.message_time}</span>
+                </div>
+            `;
+        } else if(data.file_type.startsWith("application/pdf")){
+            messageElement.innerHTML = `
+            <div class="bg-${data.email === email ? "blue-500 text-black" : "gray-200 text-gray-800"} rounded-lg px-4 py-2 max-w-xs shadow-md">
+                <span class="text-[3px] text-gray-500 block leading-tight">@${data.author_name}</span>
+                
+                <!-- PDF Icon with File Name -->
+            
+                <i class='bx bxs-file-pdf text-red-600 text-2xl'></i>
+                <span class="text-md font-medium text-gray-800 truncate max-w-[150px]">${data.file_name || "Document.pdf"}</span>
+            
+
+            <!-- Download Button -->
+            <a href="{{ data.file_url }}"download  class="text-blue-500 flex items-center">
+
+                <i class='bx bx-download'></i></i> Download 
+                
+            </a>
+    
+                <span class="text-xs text-gray-500 block mt-1">${data.message_time}</span>
+            </div>
+        `;
+
+        }
+        else if(data.file_type.startsWith("audio")){
+            messageElement.innerHTML = `
+        <div class="bg-${data.email === email ? "blue-500 text-black" : "gray-200 text-gray-800"} rounded-lg px-4 py-2 max-w-xs shadow-md">
+            <span class="text-[3px] text-gray-500 block leading-tight">@${data.author_name}</span>
+            
+            <!-- Audio Icon with File Name -->
+            
+                <i class='bx bxs-music text-green-600 text-2xl'></i>
+                <span class="text-md font-medium text-gray-800 truncate max-w-[150px]">${data.file_name || "Audio File.mp3"}</span>
+            
+
+            <!-- Audio Player -->
+            <audio controls class="w-full mt-2">
+                <source src="${data.file_url}" type="${data.file_type}">
+                Your browser does not support the audio element.
+            </audio>
+
+            <!-- Download Button -->
+            {% comment %} <a href="${data.file_url}" download class="text-blue-500 flex items-center mt-2">
+                <i class='bx bx-download'></i> Download
+            </a> {% endcomment %}
+
+            <span class="text-xs text-gray-500 block mt-1">${data.message_time}</span>
+        </div>
+    `;
+        }
+        
+        else {
+            messageElement.innerHTML = `
+                <div class="bg-${data.email === email ? "blue-500 text-black" : "gray-200 text-gray-800"} rounded-lg px-4 py-2 max-w-xs shadow-md">
+                    <span class="text-[3px] text-gray-500 block leading-tight">@${data.author_name}</span>
+                    <a href="${data.file_url}" target="_blank" class="text-blue-500 underline flex items-center">
+                        <i class='bx bx-file bx-sm mr-2'></i> Download File
+                    </a>
+                    <span class="text-xs text-gray-500 block">${data.message_time}</span>
+                </div>
+            `;
+        }
+    } else {
+        // Display text message
+        messageElement.innerHTML = `
+            <div class="bg-${data.email === email ? "blue-500 text-black" : "gray-200 text-gray-800"} rounded-lg px-4 py-2 max-w-xs shadow-md">
+                <span class="text-[3px] text-gray-500 block leading-tight">@${data.author_name}</span>
+                <strong class='text-large'>${data.message}</strong>
+                <span class="text-xs text-gray-500 block">${data.message_time}</span>
+            </div>
+        `;
+    }
+            
+            chatMessagesContainer.appendChild(messageElement);
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+    
+            // Reset notificationShown flag to allow notifications on subsequent messages
+            notificationShown = false; 
+    
+            // Show notification on new message
+            if (!notificationShown) {
+                showNotification(data.author_name, data.message);
+                notificationShown = true;
+            }
+        };
+    
+        ws.onerror = function (error) {
+            console.error("WebSocket Error:", error);
+        };
+    
+        ws.onclose = function () {
+            console.log("WebSocket Disconnected");
+        };
+    
+        // Handle file input click
+        attachmentButton.addEventListener("click", () => fileInput.click());
+
+        // Handle file input change
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = fileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = "";
+            }
+        });
+
+        // Handle chat form submission
+        chatForm.onsubmit = async function (event) {
+            event.preventDefault();
+            const formData = new FormData();
+            formData.append("body", chatInput.value.trim());
+            if (fileInput.files.length > 0) {
+                formData.append("file", fileInput.files[0]);
+            }
+
+            const response = await fetch("/upload/", {  // Add a URL for file upload handling
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            });
+
+            const data = await response.json();
+            if (data.file_url) {
+                ws.send(JSON.stringify({
+                    message: chatInput.value.trim(),
+                    email: email,
+                    file_url: data.file_url,
+                    file_type: data.file_type,
+                }));
+            } else {
+                ws.send(JSON.stringify({
+                    message: chatInput.value.trim(),
+                    email: email,
+                }));
+            }
+
+            chatInput.value = "";
+            fileInput.value = "";
+            fileNameDisplay.textContent = "";
+        };
+    
+        // Scroll to bottom when page loads
+        scrollToBottom();
+    
+        // Scroll to bottom when a new message is added
+        const chatObserver = new MutationObserver((mutations) => {
+            scrollToBottom();
+        });
+    
+        if (chatMessagesContainer) {
+            chatObserver.observe(chatMessagesContainer, { childList: true, subtree: true });
+        }
+        function showToast(message) {
+            let toast = document.createElement("div");
+            toast.className = "fixed top-5 right-5 z-50 p-4 ml-3 mt-4 text-sm font-medium text-black bg-white rounded-lg shadow-lg";
+            toast.innerHTML = message;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+    
+    });
+    
+    // Function to scroll chat container to the bottom
+    function scrollToBottom() {
+        var chatContainer = document.getElementById("chat-messages-container");
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }
+</script>
+<script src="https://unpkg.com/htmx.org@1.9.6"></script>
+
+{% endblock content %}

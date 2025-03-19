@@ -1,0 +1,95 @@
+{% extends "_cbase.html" %}
+
+{% block content %}
+
+
+<div style="min-height: 85vh; display: flex; flex-direction: column; border-radius: 5px;">
+    <!-- Header or Margin -->
+     
+
+    <!-- Main Chat Container -->
+    <div class="max-w-screen-xl mx-auto w-full flex-1 flex border border-gray-300 rounded-2xl shadow-lg overflow-hidden mt-4 mb-8 overflow-y-scroll">
+        <!-- Left Sidebar (Profile Section) -->
+        <div class="w-64 bg-gray-100 border-r border-gray-300 p-2">
+            <div class="flex items-center mb-4">
+                <img class="w-8 h-8 rounded-full" src="/static/images/user.png" alt="User">
+                {% for register in registers %}
+                <div class="ml-4">
+                    <span class="block text-lg font-semibold text-gray-900 dark:text-white ml-2">{{ register.First_name }}</span>
+                    <span class="block text-sm text-gray-500 truncate dark:text-gray-400 ml-2">{{ register.email }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <hr class="my-4 border-gray-300">
+            <div class="space-y-4">
+                <p class="text-gray-600 dark:text-gray-400">Recent Chats</p>
+                
+                <ul class="space-y-2">
+                    {% for group in chat_groups %}
+                    <li class="flex items-center space-x-2 mt-3">
+                        <img class="w-8 h-8 rounded-full" src="/static/images/user.png" alt="User">
+                        <div>
+                            <span class="block text-sm font-semibold text-gray-800 dark:text-white">{{ group.group_name }}</span>
+                            <span class="block text-xs text-gray-500 dark:text-gray-400">
+                                {% if group.chat_messages.first %}
+                    {{ group.chat_messages.first.body }}
+                {% else %}
+                    No messages yet
+                {% endif %}
+                            </span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                    
+                </ul>
+                
+            </div>
+        </div>
+
+       
+        <div class="w-full bg-white flex flex-col">
+            <!-- Chat Messages -->
+            <div class="flex-1 p-6 overflow-y-scroll space-y-4 px-2 py-2 ">
+                <!-- Admin's message (on the right) -->
+                 {%for message in chat_messages reversed %}
+                 {% if message.author == user %}
+                 <div class="flex flex-row-reverse space-x-reverse space-x-4 justify-end">
+                    <div class="bg-blue-600 text-black rounded-lg px-4 py-2 max-w-xs shadow-md">
+                        {{ message.body }}
+                        <span class="text-gray-400 text-sm block mt-1">@{{ message.author.username }}</span>
+                    </div>
+                </div>
+                {%else%}
+                <!-- Other user's message (on the left) -->
+                <div class="flex space-x-4 justify-start">
+                    <div class="bg-gray-200 text-gray-800 rounded-lg px-4 py-2 max-w-xs shadow-md">
+                        {{message.body}}
+                        <span class="text-gray-400 text-sm block mt-1">@{{ message.author.username }}</span>
+                    </div>
+                </div>
+                {%endif%}
+                {%endfor%}
+            </div>
+
+            <!-- Message Input Area (Sticky at the bottom) -->
+            <div class="p-4 border-t border-gray-300 sticky bottom-0 bg-white">
+                <form class="flex items-center space-x-2" method="POST">
+                    {% csrf_token %}
+                    <input 
+                        type="text" 
+                        name="body" 
+                        placeholder="Add message..." 
+                        class="w-full flex-grow px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                    <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+     
+{% endblock content %}
